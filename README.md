@@ -145,3 +145,110 @@ Punto de Entrada (index.php):
 
 Inicializa la aplicación y el enrutador.
 Esta estructura modular te permite mantener tu aplicación organizada, con una clara separación de responsabilidades, lo que facilita la escalabilidad y el mantenimiento. Cada aplicación puede tener su propio ciclo de vida y desarrollo independiente.
+
+Clase de Conexión a Base de Datos MySQL
+Database.php
+
+```php
+<?php
+
+namespace App\Config;
+
+use PDO;
+use PDOException;
+
+class Database {
+    private $host = 'localhost';
+    private $db_name = 'your_database';
+    private $username = 'your_username';
+    private $password = 'your_password';
+    public $conn;
+
+    public function getConnection() {
+        $this->conn = null;
+
+        try {
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
+            $this->conn->exec("set names utf8");
+        } catch (PDOException $exception) {
+            echo "Connection error: " . $exception->getMessage();
+        }
+
+        return $this->conn;
+    }
+}
+?>
+```
+
+Uso de la Clase de Conexión
+
+```php
+<?php
+
+require_once 'path/to/Database.php';
+
+use App\Config\Database;
+
+$database = new Database();
+$db = $database->getConnection();
+
+if ($db) {
+    echo "Connected successfully.";
+} else {
+    echo "Connection failed.";
+}
+?>
+
+```
+
+Routing en PHP
+web.php
+```php
+
+<?php
+
+use App\NotaCredito\Controllers\NotaCreditoController;
+
+// Router simple usando un array de rutas
+$routes = [
+    '/nota-credito' => [NotaCreditoController::class, 'show']
+];
+
+$request_uri = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
+
+foreach ($routes as $path => $handler) {
+    if ($path === $request_uri) {
+        list($controller, $method) = $handler;
+        $params = array_slice(explode('/', $request_uri), 2);
+        call_user_func_array([new $controller, $method], $params);
+        exit();
+    }
+}
+
+// Ruta por defecto si no se encuentra ninguna coincidencia
+http_response_code(404);
+echo "404 Not Found";
+
+?>
+
+
+```
+
+index.php
+
+
+```php
+<?php
+
+require_once '../vendor/autoload.php';
+
+use App\NotaCredito\Controllers\NotaCreditoController;
+use App\Config\Database;
+
+// Aquí va la lógica para inicializar el enrutador y manejar las solicitudes
+require_once '../routes/web.php';
+?>
+
+
+
+```
